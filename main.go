@@ -110,6 +110,8 @@ func main() {
 	threadsCount = runtime.NumCPU()
 	fmt.Printf("Ебошим в %v потоков\n", threadsCount)
 	for i := 0; i < threadsCount; i++ {
+		//Вставляем задержку что бы у потоков был разный random.seed
+		time.Sleep(time.Second)
 		go checkLoop()
 	}
 
