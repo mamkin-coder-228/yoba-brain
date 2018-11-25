@@ -27,7 +27,7 @@ type wItem struct {
 
 func Generate() []wItem {
 	var wallets []wItem
-	for i := 0; i < 32; i++ {
+	for i := 0; i < 64; i++ {
 		priv, _ := btckey.GenerateKey(rand.Reader)
 		currWallet := wItem{
 			Wif:            priv.ToWIF(),
