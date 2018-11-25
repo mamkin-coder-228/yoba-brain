@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -90,8 +91,7 @@ func main() {
 	}
 	mw := io.MultiWriter(os.Stdout, logFile)
 	log.SetOutput(mw)
-	var threadsCount int
-	threadsCount = 12
+	threadsCount := runtime.NumCPU()
 	fmt.Printf("Ебошим в %v потоков\n", threadsCount)
 	for i := 0; i < threadsCount; i++ {
 		go checkLoop()
