@@ -27,7 +27,7 @@ type wItem struct {
 
 func Generate() []wItem {
 	var wallets []wItem
-	for i := 0; i < 64; i++ {
+	for i := 0; i < 32; i++ {
 		priv, _ := btckey.GenerateKey(rand.Reader)
 		currWallet := wItem{
 			Wif:            priv.ToWIF(),
@@ -46,9 +46,23 @@ func Check(wallets []wItem) {
 		toSend = toSend + fmt.Sprintf("%s|", cur.AddrUncompress)
 	}
 	url := fmt.Sprintf("https://blockchain.info/balance?cors=true&active=%s", toSend)
+
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	for {
+		if resp.StatusCode == 200 {
+			break
+		} else {
+			fmt.Printf("Ошибка при получении ответа от сервера 200!=%v - повторяем запрос\n", resp.StatusCode)
+			time.Sleep(time.Second)
+			resp, err = http.Get(url)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
 	}
 	var result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&result)
@@ -59,11 +73,12 @@ func Check(wallets []wItem) {
 		n_tx, _ := c["n_tx"]
 		total_received, _ := c["n_tx"]
 
-		if final_balance == 0 {
+		if final_balance.(float64) != 0 {
 			for _, curW := range wallets {
 				if curW.AddrUncompress == id {
 					atomic.AddUint64(&success, 1)
-					log.Printf("%v - %v | %v | %v -> %v\n", id, final_balance, n_tx, total_received, curW.Wif)
+
+					log.Printf("%v - Address: %f | %v | %v -> WIF: %v\n", id, final_balance, n_tx, total_received, curW.Wif)
 					break
 				}
 			}
@@ -91,7 +106,8 @@ func main() {
 	}
 	mw := io.MultiWriter(os.Stdout, logFile)
 	log.SetOutput(mw)
-	threadsCount := runtime.NumCPU()
+	var threadsCount int
+	threadsCount = runtime.NumCPU()
 	fmt.Printf("Ебошим в %v потоков\n", threadsCount)
 	for i := 0; i < threadsCount; i++ {
 		go checkLoop()
